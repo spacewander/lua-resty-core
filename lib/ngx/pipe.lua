@@ -1,5 +1,10 @@
 -- Copyright (C) by OpenResty Inc.
 
+
+local base = require "resty.core.base"
+base.allows_subsystem('http')
+
+
 local assert = assert
 local error = error
 local ipairs = ipairs
@@ -12,7 +17,6 @@ local C = ffi.C
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ngx_phase = ngx.get_phase
-local base = require "resty.core.base"
 local get_string_buf = base.get_string_buf
 local get_size_ptr = base.get_size_ptr
 local get_request = base.get_request
@@ -40,43 +44,43 @@ typedef struct {
     ngx_http_lua_pipe_t    *pipe;
 } ngx_http_lua_ffi_pipe_proc_t;
 
-int ngx_http_lua_pipe_spawn(ngx_http_lua_ffi_pipe_proc_t *proc,
+int ngx_http_lua_ffi_pipe_spawn(ngx_http_lua_ffi_pipe_proc_t *proc,
     const char *file, const char **argv, int merge_stderr, size_t buffer_size,
     u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_read(ngx_http_request_t *r,
+int ngx_http_lua_ffi_pipe_proc_read(ngx_http_request_t *r,
     ngx_http_lua_ffi_pipe_proc_t *proc, int from_stderr, int reader_type,
     size_t length, u_char **buf, size_t *buf_size, u_char *errbuf,
     size_t *errbuf_size);
 
-int ngx_http_lua_pipe_get_read_result(ngx_http_request_t *r,
+int ngx_http_lua_ffi_pipe_get_read_result(ngx_http_request_t *r,
     ngx_http_lua_ffi_pipe_proc_t *proc, int from_stderr, u_char **buf,
     size_t *buf_size, u_char *errbuf, size_t *errbuf_size);
 
-ssize_t ngx_http_lua_pipe_proc_write(ngx_http_request_t *r,
+ssize_t ngx_http_lua_ffi_pipe_proc_write(ngx_http_request_t *r,
     ngx_http_lua_ffi_pipe_proc_t *proc, const u_char *data, size_t len,
     u_char *errbuf, size_t *errbuf_size);
 
-ssize_t ngx_http_lua_pipe_get_write_result(ngx_http_request_t *r,
+ssize_t ngx_http_lua_ffi_pipe_get_write_result(ngx_http_request_t *r,
     ngx_http_lua_ffi_pipe_proc_t *proc, u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_shutdown_stdin(ngx_http_lua_ffi_pipe_proc_t *proc,
-    u_char *errbuf, size_t *errbuf_size);
+int ngx_http_lua_ffi_pipe_proc_shutdown_stdin(
+    ngx_http_lua_ffi_pipe_proc_t *proc, u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_shutdown_stdout(ngx_http_lua_ffi_pipe_proc_t *proc,
-    u_char *errbuf, size_t *errbuf_size);
+int ngx_http_lua_ffi_pipe_proc_shutdown_stdout(
+    ngx_http_lua_ffi_pipe_proc_t *proc, u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_shutdown_stderr(ngx_http_lua_ffi_pipe_proc_t *proc,
-    u_char *errbuf, size_t *errbuf_size);
+int ngx_http_lua_ffi_pipe_proc_shutdown_stderr(
+    ngx_http_lua_ffi_pipe_proc_t *proc, u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_wait(ngx_http_request_t *r,
+int ngx_http_lua_ffi_pipe_proc_wait(ngx_http_request_t *r,
     ngx_http_lua_ffi_pipe_proc_t *proc, char **reason, int *status,
     u_char *errbuf, size_t *errbuf_size);
 
-int ngx_http_lua_pipe_proc_kill(ngx_http_lua_ffi_pipe_proc_t *proc, int signal,
-    u_char *errbuf, size_t *errbuf_size);
+int ngx_http_lua_ffi_pipe_proc_kill(ngx_http_lua_ffi_pipe_proc_t *proc,
+    int signal, u_char *errbuf, size_t *errbuf_size);
 
-void ngx_http_lua_pipe_proc_destroy(ngx_http_lua_ffi_pipe_proc_t *proc);
+void ngx_http_lua_ffi_pipe_proc_destroy(ngx_http_lua_ffi_pipe_proc_t *proc);
 ]]
 
 
@@ -85,7 +89,7 @@ local function hasattr(mod, attr)
 end
 
 
-if not pcall(hasattr, C, "ngx_http_lua_pipe_spawn") then
+if not pcall(hasattr, C, "ngx_http_lua_ffi_pipe_spawn") then
     error("pipe API is unsupported due to platform issue " ..
           "or without HAVE_SOCKET_CLOEXEC_PATCH patch")
 end
@@ -110,7 +114,7 @@ do
     local MAX_TIMEOUT = 0xffffffff
 
     function proc_set_timeouts(proc, write_timeout, stdout_read_timeout,
-                              stderr_read_timeout, wait_timeout)
+                               stderr_read_timeout, wait_timeout)
 
         -- the implementation below is straightforward but could not be JIT
         -- compiled by the latest LuaJIT. When called in loops, LuaJIT will try
@@ -131,7 +135,7 @@ do
         ]]
 
         if write_timeout then
-            if write_timeout > MAX_TIMEOUT then
+            if write_timeout < 0 or MAX_TIMEOUT < write_timeout then
                 error("bad timeout value", 2)
             end
 
@@ -139,7 +143,7 @@ do
         end
 
         if stdout_read_timeout then
-            if stdout_read_timeout > MAX_TIMEOUT then
+            if stdout_read_timeout < 0 or MAX_TIMEOUT < stdout_read_timeout then
                 error("bad timeout value", 2)
             end
 
@@ -147,7 +151,7 @@ do
         end
 
         if stderr_read_timeout then
-            if stderr_read_timeout > MAX_TIMEOUT then
+            if stderr_read_timeout < 0 or MAX_TIMEOUT < stderr_read_timeout then
                 error("bad timeout value", 2)
             end
 
@@ -155,7 +159,7 @@ do
         end
 
         if wait_timeout then
-            if wait_timeout > MAX_TIMEOUT then
+            if wait_timeout < 0 or MAX_TIMEOUT < wait_timeout then
                 error("bad timeout value", 2)
             end
 
@@ -191,9 +195,10 @@ do
         local errbuf = get_string_buf(ERR_BUF_SIZE)
         local errbuf_size = get_size_ptr()
         errbuf_size[0] = ERR_BUF_SIZE
-        local rc = C.ngx_http_lua_pipe_proc_read(r, proc, stderr, reader_type,
-                                                 len, buf, buf_size, errbuf,
-                                                 errbuf_size)
+        local rc = C.ngx_http_lua_ffi_pipe_proc_read(r, proc, stderr,
+                                                     reader_type, len, buf,
+                                                     buf_size, errbuf,
+                                                     errbuf_size)
         if rc == FFI_NO_REQ_CTX then
             error("no request ctx found")
         end
@@ -212,9 +217,9 @@ do
                 if p ~= value_buf then
                     p = ffi_new("char[?]", buf_size[0])
                     buf[0] = p
-                    C.ngx_http_lua_pipe_get_read_result(r, proc, stderr,
-                                                        buf, buf_size,
-                                                        errbuf, errbuf_size)
+                    C.ngx_http_lua_ffi_pipe_get_read_result(r, proc, stderr,
+                                                            buf, buf_size,
+                                                            errbuf, errbuf_size)
                     assert(p == buf[0])
                 end
 
@@ -228,9 +233,9 @@ do
                 if p ~= value_buf then
                     p = ffi_new("char[?]", buf_size[0])
                     buf[0] = p
-                    C.ngx_http_lua_pipe_get_read_result(r, proc, stderr,
-                                                        buf, buf_size,
-                                                        errbuf, errbuf_size)
+                    C.ngx_http_lua_ffi_pipe_get_read_result(r, proc, stderr,
+                                                            buf, buf_size,
+                                                            errbuf, errbuf_size)
                     assert(p == buf[0])
                 end
 
@@ -247,9 +252,9 @@ do
             errbuf = get_string_buf(ERR_BUF_SIZE)
             errbuf_size = get_size_ptr()
             errbuf_size[0] = ERR_BUF_SIZE
-            rc = C.ngx_http_lua_pipe_get_read_result(r, proc, stderr, buf,
-                                                     buf_size, errbuf,
-                                                     errbuf_size)
+            rc = C.ngx_http_lua_ffi_pipe_get_read_result(r, proc, stderr, buf,
+                                                         buf_size, errbuf,
+                                                         errbuf_size)
         end
     end
 
@@ -265,8 +270,8 @@ local function proc_write(proc, data)
     end
 
     local data_type = type(data)
-    if data_type ~= 'string' then
-        if data_type == 'table' then
+    if data_type ~= "string" then
+        if data_type == "table" then
             data = table_concat(data, '')
 
         else
@@ -277,8 +282,8 @@ local function proc_write(proc, data)
     local errbuf = get_string_buf(ERR_BUF_SIZE)
     local errbuf_size = get_size_ptr()
     errbuf_size[0] = ERR_BUF_SIZE
-    local rc = C.ngx_http_lua_pipe_proc_write(r, proc, data, #data, errbuf,
-                                              errbuf_size)
+    local rc = C.ngx_http_lua_ffi_pipe_proc_write(r, proc, data, #data, errbuf,
+                                                  errbuf_size)
     if rc == FFI_NO_REQ_CTX then
         error("no request ctx found")
     end
@@ -304,7 +309,8 @@ local function proc_write(proc, data)
         errbuf = get_string_buf(ERR_BUF_SIZE)
         errbuf_size = get_size_ptr()
         errbuf_size[0] = ERR_BUF_SIZE
-        rc = C.ngx_http_lua_pipe_get_write_result(r, proc, errbuf, errbuf_size)
+        rc = C.ngx_http_lua_ffi_pipe_get_write_result(r, proc, errbuf,
+                                                      errbuf_size)
     end
 end
 
@@ -318,13 +324,16 @@ local function proc_shutdown(proc, direction)
     errbuf_size[0] = ERR_BUF_SIZE
 
     if direction == "stdin" then
-        rc = C.ngx_http_lua_pipe_proc_shutdown_stdin(proc, errbuf, errbuf_size)
+        rc = C.ngx_http_lua_ffi_pipe_proc_shutdown_stdin(proc, errbuf,
+                                                         errbuf_size)
 
     elseif direction == "stdout" then
-        rc = C.ngx_http_lua_pipe_proc_shutdown_stdout(proc, errbuf, errbuf_size)
+        rc = C.ngx_http_lua_ffi_pipe_proc_shutdown_stdout(proc, errbuf,
+                                                          errbuf_size)
 
     elseif direction == "stderr" then
-        rc = C.ngx_http_lua_pipe_proc_shutdown_stderr(proc, errbuf, errbuf_size)
+        rc = C.ngx_http_lua_ffi_pipe_proc_shutdown_stderr(proc, errbuf,
+                                                          errbuf_size)
 
     else
         error("bad shutdown argument: " .. direction, 2)
@@ -354,8 +363,8 @@ do
         local errbuf = get_string_buf(ERR_BUF_SIZE)
         local errbuf_size = get_size_ptr()
         errbuf_size[0] = ERR_BUF_SIZE
-        local rc = C.ngx_http_lua_pipe_proc_wait(r, proc, reason, status,
-                                                 errbuf, errbuf_size)
+        local rc = C.ngx_http_lua_ffi_pipe_proc_wait(r, proc, reason, status,
+                                                     errbuf, errbuf_size)
         if rc == FFI_NO_REQ_CTX then
             error("no request ctx found")
         end
@@ -394,7 +403,8 @@ local function proc_kill(proc, signal)
     local errbuf_size = get_size_ptr()
     errbuf_size[0] = ERR_BUF_SIZE
 
-    local rc = C.ngx_http_lua_pipe_proc_kill(proc, signal, errbuf, errbuf_size)
+    local rc = C.ngx_http_lua_ffi_pipe_proc_kill(proc, signal, errbuf,
+                                                 errbuf_size)
     if rc == FFI_ERROR then
         return nil, ffi_str(errbuf, errbuf_size[0])
     end
@@ -404,7 +414,7 @@ end
 
 
 local mt = {
-    __gc = C.ngx_http_lua_pipe_proc_destroy,
+    __gc = C.ngx_http_lua_ffi_pipe_proc_destroy,
 
     __index = {
         pid = proc_pid,
@@ -524,7 +534,7 @@ do
                 nargs = nargs + 1
 
                 local arg_type = type(arg)
-                if arg_type ~= 'string' then
+                if arg_type ~= "string" then
                     args[i] = tostring(arg)
                 end
             end
@@ -564,9 +574,9 @@ do
         local errbuf = get_string_buf(ERR_BUF_SIZE)
         local errbuf_size = get_size_ptr()
         errbuf_size[0] = ERR_BUF_SIZE
-        local rc = C.ngx_http_lua_pipe_spawn(proc, exe, proc_args,
-                                             merge_stderr, buffer_size, errbuf,
-                                             errbuf_size)
+        local rc = C.ngx_http_lua_ffi_pipe_spawn(proc, exe, proc_args,
+                                                 merge_stderr, buffer_size,
+                                                 errbuf, errbuf_size)
         if rc == FFI_ERROR then
             return nil, ffi_str(errbuf, errbuf_size[0])
         end
@@ -576,5 +586,6 @@ do
 end  -- do
 
 _M.spawn = pipe_spawn
+
 
 return _M

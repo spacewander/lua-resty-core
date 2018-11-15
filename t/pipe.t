@@ -516,7 +516,59 @@ failed to set timeouts: bad timeout value
 
 
 
-=== TEST 16: wait process, timeout
+=== TEST 16: avoid setting neglect timeout
+--- config
+    location = /t {
+        content_by_lua_block {
+            local ngx_pipe = require "ngx.pipe"
+            local proc, err = ngx_pipe.spawn({"sleep", "5s"})
+            if not proc then
+                ngx.say(err)
+                return
+            end
+
+            local function check_timeouts(write, stdout_read, stderr_read, wait)
+                local ok, err = pcall(proc.set_timeouts, proc, write, stdout_read, stderr_read, wait)
+                if not ok then
+                    ngx.say("failed to set timeouts: ", err)
+                else
+                    ngx.say("set_timeouts: ok")
+                end
+            end
+
+            check_timeouts(0, 0, 0, 0)
+
+            ngx.say("\nwrite_timeout:")
+            check_timeouts(-1, 0, 0, 0)
+
+            ngx.say("\nstdout_read_timeout:")
+            check_timeouts(0, -1, 0, 0)
+
+            ngx.say("\nstderr_read_timeout:")
+            check_timeouts(0, 0, -1, 0)
+
+            ngx.say("\nwait_timeout:")
+            check_timeouts(0, 0, 0, -1)
+        }
+    }
+--- response_body
+set_timeouts: ok
+
+write_timeout:
+failed to set timeouts: bad timeout value
+
+stdout_read_timeout:
+failed to set timeouts: bad timeout value
+
+stderr_read_timeout:
+failed to set timeouts: bad timeout value
+
+wait_timeout:
+failed to set timeouts: bad timeout value
+
+
+
+=== TEST 17: wait process, timeout
 --- config
     location = /t {
         content_by_lua_block {
@@ -547,7 +599,7 @@ lua pipe add timer for waiting: 100(ms)
 
 
 
-=== TEST 17: wait process, timeout, test for race condition
+=== TEST 18: wait process, timeout, test for race condition
 --- config
     location = /t {
         content_by_lua_block {
@@ -575,7 +627,7 @@ ok
 
 
 
-=== TEST 18: user case with send and shutdown
+=== TEST 19: user case with send and shutdown
 --- config
     location = /t {
         content_by_lua_block {
@@ -621,7 +673,7 @@ ok
 
 
 
-=== TEST 19: shutdown before write/stdout_read/stderr_read
+=== TEST 20: shutdown before write/stdout_read/stderr_read
 --- config
     location = /t {
         content_by_lua_block {
@@ -661,7 +713,7 @@ stderr: closed
 
 
 
-=== TEST 20: shutdown after write/stdout_read/stderr_read
+=== TEST 21: shutdown after write/stdout_read/stderr_read
 --- config
     location = /t {
         content_by_lua_block {
@@ -704,7 +756,7 @@ stderr: closed
 
 
 
-=== TEST 21: shutdown repeatly is harmless
+=== TEST 22: shutdown repeatly is harmless
 --- config
     location = /t {
         content_by_lua_block {
@@ -750,7 +802,7 @@ stderr: closed
 
 
 
-=== TEST 22: shutdown unknown direction
+=== TEST 23: shutdown unknown direction
 --- config
     location = /t {
         content_by_lua_block {
@@ -774,7 +826,7 @@ bad shutdown argument: 0
 
 
 
-=== TEST 23: shutdown a direction when there is coroutine waiting for it
+=== TEST 24: shutdown a direction when there is coroutine waiting for it
 --- config
     location = /t {
         content_by_lua_block {
@@ -835,7 +887,7 @@ lua pipe write yielding
 
 
 
-=== TEST 24: shutdown when merge_stderr is true
+=== TEST 25: shutdown when merge_stderr is true
 --- config
     location = /t {
         content_by_lua_block {
@@ -899,7 +951,7 @@ stderr: closed
 
 
 
-=== TEST 25: interrupt signals should not break ngx.pipe IO
+=== TEST 26: interrupt signals should not break ngx.pipe IO
 github issue openresty/resty-cli#35
 --- config
     location = /t {
@@ -924,7 +976,7 @@ MD5\([^)]+\)= 8bc944dbd052ef51652e70a5104492e3
 
 
 
-=== TEST 26: ensure signals ignored by Nginx are reset.
+=== TEST 27: ensure signals ignored by Nginx are reset.
 --- config
     location = /t {
         content_by_lua_block {
@@ -981,7 +1033,7 @@ closed
 
 
 
-=== TEST 27: ensure spawning process in init_by_lua is disabled.
+=== TEST 28: ensure spawning process in init_by_lua is disabled.
 --- init_by_lua_block
     local ngx_pipe = require "ngx.pipe"
 
@@ -1002,7 +1054,7 @@ API disabled in the current context
 
 
 
-=== TEST 28: interact with bc
+=== TEST 29: interact with bc
 --- config
     location = /t {
         content_by_lua_block {
@@ -1054,7 +1106,7 @@ bc say 8
 
 
 
-=== TEST 29: allow to specify nil as terminator
+=== TEST 30: allow to specify nil as terminator
 --- config
     location = /t {
         content_by_lua_block {
@@ -1079,7 +1131,7 @@ hello
 
 
 
-=== TEST 30: specify a string to spawn works like os.execute
+=== TEST 31: specify a string to spawn works like os.execute
 --- config
     location = /t {
         content_by_lua_block {
@@ -1107,7 +1159,7 @@ stderr: world
 
 
 
-=== TEST 31: wait process which executed failed
+=== TEST 32: wait process which executed failed
 When execvp failed, we let OS free the memory. Therefore we have to skip this
 test under Valgrind mode.
 --- skip_eval: 3: defined $ENV{TEST_NGINX_USE_VALGRIND}
@@ -1138,7 +1190,7 @@ lua pipe execvp() failed while executing /exit (2: No such file or directory)
 
 
 
-=== TEST 32: wait process, process exited normally after waiting
+=== TEST 33: wait process, process exited normally after waiting
 --- config
     location = /t {
         content_by_lua_block {
@@ -1168,7 +1220,7 @@ lua pipe wait process:
 
 
 
-=== TEST 33: kill process with invalid signal
+=== TEST 34: kill process with invalid signal
 --- config
     location = /t {
         content_by_lua_block {
@@ -1199,7 +1251,7 @@ invalid signal
 
 
 
-=== TEST 34: kill exited process
+=== TEST 35: kill exited process
 --- config
     location = /t {
         content_by_lua_block {
@@ -1233,7 +1285,7 @@ exited
 
 
 
-=== TEST 35: wait process which is terminated by a signal, using proc.kill
+=== TEST 36: wait process which is terminated by a signal, using proc.kill
 --- config
     location = /t {
         content_by_lua_block {
@@ -1273,7 +1325,7 @@ signal
 
 
 
-=== TEST 36: kill living sub-process when the process instance is collected by GC.
+=== TEST 37: kill living sub-process when the process instance is collected by GC.
 --- config
     location = /t {
         content_by_lua_block {
@@ -1300,7 +1352,7 @@ lua pipe kill process:
 
 
 
-=== TEST 37: kill living sub-process during Lua VM destruction.
+=== TEST 38: kill living sub-process during Lua VM destruction.
 --- config
     location = /t {
         content_by_lua_block {
@@ -1322,7 +1374,7 @@ lua pipe kill process:
 
 
 
-=== TEST 38: avoided overwritting log fd when stderr is used as destination.
+=== TEST 39: avoided overwritting log fd when stderr is used as destination.
 --- config
     location = /t {
         content_by_lua_block {
@@ -1351,7 +1403,7 @@ lua pipe execvp\(\) failed while executing no-such-cmd \(2: No such file or dire
 
 
 
-=== TEST 39: avoid shell cmd's constants being GCed
+=== TEST 40: avoid shell cmd's constants being GCed
 --- init_by_lua_block
     local ngx_pipe = require "ngx.pipe"
     package.loaded.pipe = ngx_pipe

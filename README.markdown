@@ -289,9 +289,11 @@ See the [documentation](./lib/ngx/resp.md) for this Lua module for more details.
 
 ## ngx.pipe
 
-This Lua module provides Lua API which could be used to spawn processes and communicate with them nonblockingly.
+This module provides a Lua API to spawn processes and communicate with them in a non-blocking fashion.
 
 See the [documentation](./lib/ngx/pipe.md) for this Lua module for more details.
+
+This module was first introduced in lua-resty-core ${ver_should_be_updated_in_merging}.
 
 [Back to TOC](#table-of-contents)
 

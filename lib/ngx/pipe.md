@@ -226,7 +226,7 @@ wait
 ----
 **syntax:** *ok, reason, status = proc:wait()*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Waits until the current sub-process exits.
 
@@ -244,7 +244,7 @@ In this case, `status` will be the exit code.
 * `signal`: process terminated by signal. In this case, `status` will be the signal number.
 
 Note that only one light thread could wait on a process. If another light thread tries
-to wait a process, the return value will be `nil` plus `pipe busy waiting`.
+to wait on a process, the return value will be `nil` plus `pipe busy waiting`.
 
 If a thread try to wait an exited process, it will get `nil` and the error
 string `"exited"`.
@@ -293,7 +293,7 @@ In case of success, it returns `true`. Otherwise it returns `nil` and a string
 describing the error.
 
 Shutting down a direction when there is a light thread waiting on it (like
-reading or writing)  with yield the `nil` return value and the error string
+reading or writing) will yield the `nil` return value and the error string
 `"pipe busy writing"` (for stdin) or `"pipe busy reading"` (for the others).
 
 Shutting down directions of an exited process will return `nil` and the error
@@ -308,7 +308,7 @@ write
 -----
 **syntax:** *nbytes, err = proc:write(data)*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Writes data to the current sub-process's stdin stream.
 
@@ -340,7 +340,7 @@ stdout_read_all
 ---------------
 **syntax:** *data, err, partial = proc:stdout_read_all()*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Similar to the [stderr_read_all](#stderr_read_all) method but reading from
 the stdout stream of the sub-process.
@@ -351,7 +351,7 @@ stderr_read_all
 ---------------
 **syntax:** *data, err, partial = proc:stderr_read_all()*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Reads all data from the current sub-process's stderr stream until the stderr is
 closed.
@@ -369,7 +369,7 @@ a string describing the error, and the partial data received so far.
 
 Only one light thread is allowed to read from a process's stderr or stdout stream at a time.
 If another thread tries to read from the same stream, it will return `nil` and the error string
-`"pipe busy read"`.
+`"pipe busy reading"`.
 
 Each stream for stdout and stderr are separate, so you can have at most two
 light threads reading from a sub-process, one from the stdout stream and the other
@@ -394,7 +394,7 @@ stdout_read_line
 ----------------
 **syntax:** *data, err, partial = proc:stdout_read_line()*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Similar to [stderr_read_line](#stderr_read_line) but working on the sub-process's
 stdout stream.
@@ -405,7 +405,7 @@ stderr_read_line
 ----------------
 **syntax:** *data, err, partial = proc:stderr_read_line()*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Reads data like [stderr_read_all](#stderr_read_all) but only reads a single line of data.
 
@@ -423,7 +423,7 @@ stdout_read_bytes
 
 **syntax:** *data, err, partial = proc:stdout_read_bytes(len)*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Similar to [stderr_read_bytes](#stderr_read_bytes) but working on the sub-process's
 stdout stream.
@@ -434,7 +434,7 @@ stderr_read_bytes
 -----------------
 **syntax:** *data, err, partial = proc:stderr_read_bytes(len)*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Reads data from stderr like [stderr_read_all](#stderr_read_all) but only reads the
 specified number of bytes of data.
@@ -449,7 +449,7 @@ stdout_read_any
 
 **syntax:** *data, err = proc:stdout_read_any(max)*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Similar to [stderr_read_any](#stderr_read_any) but working on the sub-process's
 stdout stream.
@@ -461,7 +461,7 @@ stderr_read_any
 
 **syntax:** *data, err = proc:stderr_read_any(max)*
 
-**context:** *phases support yielding*
+**context:** *phases that support yielding*
 
 Reads data like [stderr_read_all](#stderr_read_all) but returns immediately
 when any amount of data is received, at most `max` bytes.
