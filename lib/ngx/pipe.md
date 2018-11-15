@@ -18,14 +18,14 @@ Table of Contents
     * [kill](#kill)
     * [shutdown](#shutdown)
     * [write](#write)
-    * [stdout_read_all](#stdout_read_all)
     * [stderr_read_all](#stderr_read_all)
-    * [stdout_read_line](#stdout_read_line)
+    * [stdout_read_all](#stdout_read_all)
     * [stderr_read_line](#stderr_read_line)
-    * [stdout_read_bytes](#stdout_read_bytes)
+    * [stdout_read_line](#stdout_read_line)
     * [stderr_read_bytes](#stderr_read_bytes)
-    * [stdout_read_any](#stdout_read_any)
+    * [stdout_read_bytes](#stdout_read_bytes)
     * [stderr_read_any](#stderr_read_any)
+    * [stdout_read_any](#stdout_read_any)
 * [Community](#community)
     * [English Mailing List](#english-mailing-list)
     * [Chinese Mailing List](#chinese-mailing-list)
@@ -336,17 +336,6 @@ Writing to an exited sub-process will return `nil` and the error string
 
 [Back to TOC](#table-of-contents)
 
-stdout_read_all
----------------
-**syntax:** *data, err, partial = proc:stdout_read_all()*
-
-**context:** *phases that support yielding*
-
-Similar to the [stderr_read_all](#stderr_read_all) method but reading from
-the stdout stream of the sub-process.
-
-[Back to TOC](#table-of-contents)
-
 stderr_read_all
 ---------------
 **syntax:** *data, err, partial = proc:stderr_read_all()*
@@ -390,14 +379,14 @@ Reading from an exited process's streams will return `nil` plus `closed`.
 
 [Back to TOC](#table-of-contents)
 
-stdout_read_line
-----------------
-**syntax:** *data, err, partial = proc:stdout_read_line()*
+stdout_read_all
+---------------
+**syntax:** *data, err, partial = proc:stdout_read_all()*
 
 **context:** *phases that support yielding*
 
-Similar to [stderr_read_line](#stderr_read_line) but working on the sub-process's
-stdout stream.
+Similar to the [stderr_read_all](#stderr_read_all) method but reading from
+the stdout stream of the sub-process.
 
 [Back to TOC](#table-of-contents)
 
@@ -418,14 +407,13 @@ The CR and LF characters are not included in the returned line data.
 
 [Back to TOC](#table-of-contents)
 
-stdout_read_bytes
------------------
-
-**syntax:** *data, err, partial = proc:stdout_read_bytes(len)*
+stdout_read_line
+----------------
+**syntax:** *data, err, partial = proc:stdout_read_line()*
 
 **context:** *phases that support yielding*
 
-Similar to [stderr_read_bytes](#stderr_read_bytes) but working on the sub-process's
+Similar to [stderr_read_line](#stderr_read_line) but working on the sub-process's
 stdout stream.
 
 [Back to TOC](#table-of-contents)
@@ -444,14 +432,14 @@ If the data stream is truncated with less bytes of data available, it returns
 
 [Back to TOC](#table-of-contents)
 
-stdout_read_any
----------------
+stdout_read_bytes
+-----------------
 
-**syntax:** *data, err = proc:stdout_read_any(max)*
+**syntax:** *data, err, partial = proc:stdout_read_bytes(len)*
 
 **context:** *phases that support yielding*
 
-Similar to [stderr_read_any](#stderr_read_any) but working on the sub-process's
+Similar to [stderr_read_bytes](#stderr_read_bytes) but working on the sub-process's
 stdout stream.
 
 [Back to TOC](#table-of-contents)
@@ -469,6 +457,18 @@ when any amount of data is received, at most `max` bytes.
 If the received data is more than `max` bytes, this method will return with
 exactly the `max` size of data. The remaining data in the underlying receive buffer
 can be fetched in the next reading operation.
+
+[Back to TOC](#table-of-contents)
+
+stdout_read_any
+---------------
+
+**syntax:** *data, err = proc:stdout_read_any(max)*
+
+**context:** *phases that support yielding*
+
+Similar to [stderr_read_any](#stderr_read_any) but working on the sub-process's
+stdout stream.
 
 [Back to TOC](#table-of-contents)
 
