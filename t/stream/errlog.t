@@ -551,6 +551,7 @@ log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(ng
 
 
 === TEST 18: flood the capturing buffer (5k)
+--- ONLY
 --- stream_config
     lua_capture_error_log 5k;
 --- stream_server_config
@@ -574,30 +575,18 @@ log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(ng
         for i = 1, 3 * 3, 3 do
             ngx.say("log level:", res[i])
             ngx.say("log body:", res[i + 2])
+            ngx.say("log body:", res[i + 2])
         end
 
         -- last 3 logs
         for i = #res - 8, #res, 3 do
             ngx.say("log level:", res[i])
             ngx.say("log body:", res[i + 2])
+            ngx.say("log body:", res[i + 2])
         end
     }
 --- log_level: notice
---- stream_response_like chomp
-\A(?:log lines: #33
-log level:4
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 84, client: 127.0.0.1, server: 0.0.0.0:\d+
-log level:5
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[warn\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 85, client: 127.0.0.1, server: 0.0.0.0:\d+
-log level:4
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 85, client: 127.0.0.1, server: 0.0.0.0:\d+
-log level:4
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 99, client: 127.0.0.1, server: 0.0.0.0:\d+
-log level:5
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[warn\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 100, client: 127.0.0.1, server: 0.0.0.0:\d+
-log level:4
-log body:\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[error\] (\d+).*content_by_lua\(nginx.conf:\d+\):\d+: --> 100, client: 127.0.0.1, server: 0.0.0.0:\d+
-)\z
+--- stream_response
 --- skip_nginx: 2: <1.11.2
 --- wait: 0.1
 
