@@ -155,7 +155,7 @@ function ngx.req.get_headers(max_headers, raw)
 end
 
 
-function ngx.req.get_uri_args(max_args)
+function ngx.req.get_uri_args(max_args, tab)
     local r = get_request()
     if not r then
         error("no request found")
@@ -171,7 +171,7 @@ function ngx.req.get_uri_args(max_args)
     end
 
     if n == 0 then
-        return {}
+        return tab or {}
     end
 
     local args_len = C.ngx_http_lua_ffi_req_get_querystring_len(r)
@@ -181,7 +181,7 @@ function ngx.req.get_uri_args(max_args)
 
     local nargs = C.ngx_http_lua_ffi_req_get_uri_args(r, strbuf, kvbuf, n)
 
-    local args = new_tab(0, nargs)
+    local args = tab or new_tab(0, nargs)
     for i = 0, nargs - 1 do
         local arg = kvbuf[i]
 
