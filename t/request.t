@@ -584,7 +584,6 @@ foo bar:
             local args = base.new_tab(0, 3)
             local id = tostring(args)
             for i = 1, 5 do
-                base.clear_tab(args)
                 args = ngx.req.get_uri_args(-1, args)
                 assert(tostring(args) == id)
             end
